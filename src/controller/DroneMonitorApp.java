@@ -2,7 +2,7 @@ package controller;
 
 import model.Drone;
 import model.AnomalyRecord;
-import view.ConsoleDashboard;
+import view.Dashboard;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,14 +18,15 @@ public class DroneMonitorApp {
 
         TelemetryGenerator generator = new TelemetryGenerator();
         AnomalyDetector detector = new AnomalyDetector();
-        ConsoleDashboard view = new ConsoleDashboard();
+        Dashboard view = new Dashboard();
+        javax.swing.SwingUtilities.invokeLater(() -> view.setVisible(true));
 
         while (true) {
             generator.updateDrones(drones);
 
             List<AnomalyRecord> anomalies = detector.detect(drones);
 
-            view.display(drones, anomalies);
+            //view.display(drones, anomalies);
 
             Thread.sleep(2000);
         }
