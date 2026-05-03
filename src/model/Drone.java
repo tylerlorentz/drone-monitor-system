@@ -22,6 +22,7 @@ public class Drone {
     public double getLongitude() { return longitude; }
     public double getAltitude() { return altitude; }
     public double getBattery() { return battery; }
+    public double getVelocity() { return velocity; }
 
     public void update(double lat, double lon, double alt, double battery) {
         this.latitude = lat;
