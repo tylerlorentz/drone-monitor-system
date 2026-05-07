@@ -83,7 +83,6 @@ public class DroneMonitorApp {
 
                     totalAnomalies++;
 
-                    // simple categorization (useful for grading + insight)
                     switch (a.getType()) {
                         case "LOW_BATTERY":
                             lowBatteryCount++;
@@ -98,9 +97,6 @@ public class DroneMonitorApp {
                     }
                 }
 
-                // -------------------------
-                // SUMMARY STATS
-                // -------------------------
                 System.out.println("\n--- ANOMALY SUMMARY ---");
                 System.out.println("Total anomalies: " + totalAnomalies);
                 System.out.println("Low battery: " + lowBatteryCount);
