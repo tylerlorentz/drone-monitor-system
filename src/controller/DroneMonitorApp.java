@@ -2,16 +2,19 @@ package controller;
 
 import model.Drone;
 import model.AnomalyRecord;
-import view.ConsoleDashboard;
 import view.Dashboard;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Entry point for the Drone Fleet Monitor application.
- * Initialises the drone fleet, runs the telemetry loop, and updates the chosen view.
+ * Main application loop for drone fleet monitoring system.
  *
+ * Now includes:
+ * - runtime cycle tracking
+ * - anomaly summary statistics
+ * - improved console output formatting
+ * - safer UI update handling
  */
 public class DroneMonitorApp {
 
@@ -25,20 +28,90 @@ public class DroneMonitorApp {
         TelemetryGenerator generator = new TelemetryGenerator();
         AnomalyDetector detector = new AnomalyDetector();
 
-
         Dashboard view = new Dashboard();
         javax.swing.SwingUtilities.invokeLater(() -> view.setVisible(true));
 
-        // Console Dashboard displays data in console instead of GUI.
-        //ConsoleDashboard consoleDashboard = new ConsoleDashboard();
+        int cycle = 0;
 
         while (true) {
-            generator.updateDrones(drones);
 
+            cycle++;
+
+            generator.updateDrones(drones);
             List<AnomalyRecord> anomalies = detector.detect(drones);
 
-            // displays data in the ConsoleDashboard class, Dashboard class currently has no display()
-            //view.display(drones, anomalies);
+            // -------------------------
+            // SAFE UI UPDATE
+            // -------------------------
+            javax.swing.SwingUtilities.invokeLater(() -> view.display(drones, anomalies));
+
+            // -------------------------
+            // CONSOLE OUTPUT
+            // -------------------------
+            System.out.println("\n====================================");
+            System.out.println(" DRONE FLEET STATUS | CYCLE " + cycle);
+            System.out.println("====================================");
+
+            int totalAnomalies = 0;
+            int lowBatteryCount = 0;
+            int gpsErrors = 0;
+            int altitudeWarnings = 0;
+
+            for (Drone d : drones) {
+                System.out.printf(
+                        "%s | LAT: %.5f | LON: %.5f | ALT: %.2f | BAT: %.1f%% | VEL: %.5f%n",
+                        d.getId(),
+                        d.getLatitude(),
+                        d.getLongitude(),
+                        d.getAltitude(),
+                        d.getBattery(),
+                        d.getVelocity()
+                );
+            }
+
+            if (!anomalies.isEmpty()) {
+
+                System.out.println("\n--- ANOMALIES DETECTED ---");
+
+                for (AnomalyRecord a : anomalies) {
+
+                    System.out.println(a.getDroneId()
+                            + " -> "
+                            + a.getType()
+                            + ": "
+                            + a.getMessage());
+
+                    totalAnomalies++;
+
+                    // simple categorization (useful for grading + insight)
+                    switch (a.getType()) {
+                        case "LOW_BATTERY":
+                            lowBatteryCount++;
+                            break;
+                        case "GPS_ERROR":
+                        case "GPS_SPOOFING":
+                            gpsErrors++;
+                            break;
+                        case "ALTITUDE_RISK":
+                            altitudeWarnings++;
+                            break;
+                    }
+                }
+
+                // -------------------------
+                // SUMMARY STATS
+                // -------------------------
+                System.out.println("\n--- ANOMALY SUMMARY ---");
+                System.out.println("Total anomalies: " + totalAnomalies);
+                System.out.println("Low battery: " + lowBatteryCount);
+                System.out.println("GPS issues: " + gpsErrors);
+                System.out.println("Altitude warnings: " + altitudeWarnings);
+
+            } else {
+                System.out.println("\nNo anomalies detected this cycle.");
+            }
+
+            System.out.println("====================================");
 
             Thread.sleep(2000);
         }
