@@ -1,9 +1,9 @@
 package controller;
 
+import model.DatabaseManager;
 import model.Drone;
 import model.AnomalyRecord;
 import view.Dashboard;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,8 +19,9 @@ import java.util.List;
 public class DroneMonitorApp {
 
     public static void main(String[] args) throws InterruptedException {
-
+        DatabaseManager db = new DatabaseManager();
         List<Drone> drones = new ArrayList<>();
+
         drones.add(new Drone("D1", 47.60, -122.33, 50, 100, 10));
         drones.add(new Drone("D2", 47.61, -122.34, 60, 100, 10));
         drones.add(new Drone("D3", 47.62, -122.35, 55, 100, 10));
@@ -79,7 +80,7 @@ public class DroneMonitorApp {
                             + " -> "
                             + a.getType()
                             + ": "
-                            + a.getMessage());
+                            + a.getDetails());
 
                     totalAnomalies++;
 
@@ -95,6 +96,7 @@ public class DroneMonitorApp {
                             altitudeWarnings++;
                             break;
                     }
+                    db.saveAnomaly(a);
                 }
 
                 System.out.println("\n--- ANOMALY SUMMARY ---");
