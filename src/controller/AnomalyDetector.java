@@ -13,6 +13,7 @@ public class AnomalyDetector {
 
     private static final double BATTERY_THRESHOLD = 15.0;
     private static final double ALTITUDE_THRESHOLD = 5.0;
+    private static final double VELOCITY_THRESHOLD = 15.0;
 
     public List<AnomalyRecord> detect(List<Drone> drones) {
 
@@ -27,82 +28,60 @@ public class AnomalyDetector {
             double lon = d.getLongitude();
 
             // LOW BATTERY
-            if (isLowBattery(d)) {
+            if (battery < BATTERY_THRESHOLD) {
 
-                if (battery <= 5) {
-                    anomalies.add(new AnomalyRecord(
-                            d.getId(),
-                            "CRITICAL_BATTERY",
-                            "Battery critically low: " + String.format("%.1f", battery) + "%"
-                    ));
-                } else {
-                    anomalies.add(new AnomalyRecord(
-                            d.getId(),
-                            AnomalyRecord.LOW_BATTERY,
-                            "Battery warning: " + String.format("%.1f", battery) + "%"
-                    ));
-                }
+                anomalies.add(new AnomalyRecord(
+                        d.getId(),
+                        "LOW_BATTERY",
+                        "Battery warning: "
+                                + String.format("%.1f", battery)
+                                + "%"
+                ));
             }
 
             // LOW ALTITUDE
-            if (isLowAltitude(d)) {
+            if (altitude < ALTITUDE_THRESHOLD) {
 
-                if (altitude < 2) {
-                    anomalies.add(new AnomalyRecord(
-                            d.getId(),
-                            "CRASH_RISK",
-                            "Dangerously low altitude: " + String.format("%.2f", altitude)
-                    ));
-                } else {
-                    anomalies.add(new AnomalyRecord(
-                            d.getId(),
-                            "ALTITUDE_RISK",
-                            "Low altitude warning: " + String.format("%.2f", altitude)
-                    ));
-                }
+                anomalies.add(new AnomalyRecord(
+                        d.getId(),
+                        "ALTITUDE_RISK",
+                        "Low altitude warning: "
+                                + String.format("%.2f", altitude)
+                ));
             }
 
             // GPS SPOOFING
-            if (isGPSSpoofing(d)) {
+            if (Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+
                 anomalies.add(new AnomalyRecord(
                         d.getId(),
-                        AnomalyRecord.GPS_SPOOFING,
+                        "GPS_SPOOFING",
                         "Invalid GPS coordinates detected"
                 ));
             }
 
             // HIGH VELOCITY
-            if (velocity > 0.6) {
+            if (velocity > VELOCITY_THRESHOLD) {
+
                 anomalies.add(new AnomalyRecord(
                         d.getId(),
                         "HIGH_VELOCITY",
-                        "Abnormal movement speed detected: " + String.format("%.5f", velocity)
+                        "Abnormal movement speed detected: "
+                                + String.format("%.2f", velocity)
                 ));
             }
 
-            // COMBINED RISK
+            // EMERGENCY RISK
             if (battery < 15 && altitude < 5) {
+
                 anomalies.add(new AnomalyRecord(
                         d.getId(),
                         "EMERGENCY_RISK",
-                        "Low battery AND low altitude detected (high crash risk)"
+                        "Low battery AND low altitude detected"
                 ));
             }
         }
 
         return anomalies;
-    }
-
-    private boolean isLowBattery(Drone d) {
-        return d.getBattery() < BATTERY_THRESHOLD;
-    }
-
-    private boolean isLowAltitude(Drone d) {
-        return d.getAltitude() < ALTITUDE_THRESHOLD;
-    }
-
-    private boolean isGPSSpoofing(Drone d) {
-        return Math.abs(d.getLatitude()) > 90 ||
-                Math.abs(d.getLongitude()) > 180;
     }
 }
