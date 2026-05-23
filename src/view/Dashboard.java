@@ -29,9 +29,7 @@ public class Dashboard extends JFrame {
     private Set<String> displayedAnomalies =
             new HashSet<>();
 
-    // -------------------------
-    // LIVE TELEMETRY LABELS
-    // -------------------------
+    // Live telemetry labels
     private JLabel droneIdValue;
     private JLabel altitudeValue;
     private JLabel batteryValue;
@@ -74,16 +72,12 @@ public class Dashboard extends JFrame {
     public void display(List<Drone> drones,
                         List<AnomalyRecord> anomalies) {
 
-        // Default drone selection
         if (selectedDrone == null
                 && !drones.isEmpty()) {
 
             selectedDrone = drones.get(0);
         }
 
-        // -------------------------
-        // LIVE TELEMETRY UPDATES
-        // -------------------------
         if (selectedDrone != null) {
 
             droneIdValue.setText(
