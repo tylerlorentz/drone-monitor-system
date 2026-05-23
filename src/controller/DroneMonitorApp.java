@@ -41,6 +41,7 @@ public class DroneMonitorApp {
             // Update drone telemetry
             generator.updateDrones(drones);
 
+
             // Detect anomalies
             List<AnomalyRecord> anomalies = detector.detect(drones);
 
