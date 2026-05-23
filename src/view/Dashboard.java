@@ -38,6 +38,7 @@ public class Dashboard extends JFrame {
     private JLabel longitudeValue;
 
     private Drone selectedDrone;
+    private List<Drone> currentDrones;
 
     public Dashboard() {
 
@@ -72,12 +73,18 @@ public class Dashboard extends JFrame {
     public void display(List<Drone> drones,
                         List<AnomalyRecord> anomalies) {
 
+        currentDrones = drones;
+
+        // Default selected drone
         if (selectedDrone == null
                 && !drones.isEmpty()) {
 
             selectedDrone = drones.get(0);
         }
 
+        // -------------------------
+        // LIVE TELEMETRY UPDATES
+        // -------------------------
         if (selectedDrone != null) {
 
             droneIdValue.setText(
@@ -159,6 +166,34 @@ public class Dashboard extends JFrame {
         );
 
         list.setSelectionForeground(ACCENT);
+
+        // --------------------------------------
+        // INTERACTIVE DRONE SELECTION
+        // --------------------------------------
+        list.addListSelectionListener(e -> {
+
+            if (e.getValueIsAdjusting()) {
+                return;
+            }
+
+            String selectedId =
+                    list.getSelectedValue();
+
+            if (selectedId == null
+                    || currentDrones == null) {
+                return;
+            }
+
+            for (Drone d : currentDrones) {
+
+                if (d.getId().equals(selectedId)) {
+
+                    selectedDrone = d;
+
+                    break;
+                }
+            }
+        });
 
         JScrollPane scroll =
                 new JScrollPane(list);
