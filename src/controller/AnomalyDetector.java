@@ -8,12 +8,10 @@ import java.util.List;
 
 /**
  * Detects anomalies in drone telemetry data.
+ *
+ * Now includes improved safety rules and more structured detection logic.
  */
 public class AnomalyDetector {
-
-    private static final double BATTERY_THRESHOLD = 15.0;
-    private static final double ALTITUDE_THRESHOLD = 5.0;
-    private static final double VELOCITY_THRESHOLD = 15.0;
 
     public List<AnomalyRecord> detect(List<Drone> drones) {
 
@@ -27,57 +25,70 @@ public class AnomalyDetector {
             double lat = d.getLatitude();
             double lon = d.getLongitude();
 
-            // LOW BATTERY
-            if (battery < BATTERY_THRESHOLD) {
-
+            // -------------------------
+            // 1. BATTERY SAFETY RULES
+            // -------------------------
+            if (battery <= 5) {
+                anomalies.add(new AnomalyRecord(
+                        d.getId(),
+                        "CRITICAL_BATTERY",
+                        "Battery critically low: " + String.format("%.1f", battery) + "%"
+                ));
+            } else if (battery < 15) {
                 anomalies.add(new AnomalyRecord(
                         d.getId(),
                         "LOW_BATTERY",
-                        "Battery warning: "
-                                + String.format("%.1f", battery)
-                                + "%"
+                        "Battery warning: " + String.format("%.1f", battery) + "%"
                 ));
             }
 
-            // LOW ALTITUDE
-            if (altitude < ALTITUDE_THRESHOLD) {
-
+            // -------------------------
+            // 2. ALTITUDE SAFETY RULES
+            // -------------------------
+            if (altitude < 2) {
+                anomalies.add(new AnomalyRecord(
+                        d.getId(),
+                        "CRASH_RISK",
+                        "Dangerously low altitude: " + String.format("%.2f", altitude)
+                ));
+            } else if (altitude < 5) {
                 anomalies.add(new AnomalyRecord(
                         d.getId(),
                         "ALTITUDE_RISK",
-                        "Low altitude warning: "
-                                + String.format("%.2f", altitude)
+                        "Low altitude warning: " + String.format("%.2f", altitude)
                 ));
             }
 
-            // GPS SPOOFING
+            // -------------------------
+            // 3. GPS VALIDATION
+            // -------------------------
             if (Math.abs(lat) > 90 || Math.abs(lon) > 180) {
-
                 anomalies.add(new AnomalyRecord(
                         d.getId(),
-                        "GPS_SPOOFING",
+                        "GPS_ERROR",
                         "Invalid GPS coordinates detected"
                 ));
             }
 
-            // HIGH VELOCITY
-            if (velocity > VELOCITY_THRESHOLD) {
-
+            // -------------------------
+            // 4. MOVEMENT ANOMALY (VELOCITY)
+            // -------------------------
+            if (velocity > 0.6) {
                 anomalies.add(new AnomalyRecord(
                         d.getId(),
                         "HIGH_VELOCITY",
-                        "Abnormal movement speed detected: "
-                                + String.format("%.2f", velocity)
+                        "Abnormal movement speed detected: " + String.format("%.5f", velocity)
                 ));
             }
 
-            // EMERGENCY RISK
+            // -------------------------
+            // 5. COMBINED RISK CHECK
+            // -------------------------
             if (battery < 15 && altitude < 5) {
-
                 anomalies.add(new AnomalyRecord(
                         d.getId(),
                         "EMERGENCY_RISK",
-                        "Low battery AND low altitude detected"
+                        "Low battery AND low altitude detected (high crash risk)"
                 ));
             }
         }
