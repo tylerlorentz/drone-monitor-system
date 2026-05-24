@@ -7,6 +7,7 @@ import model.Drone;
 import model.DroneStatus;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -16,6 +17,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Dashboard is the main application window for the Drone Fleet management system.
@@ -458,8 +461,13 @@ public class Dashboard extends JFrame {
         return p;
     }
 
-    private JLabel sectionLabel(String text) {
-        JLabel lbl = new JLabel(text);
+    /**
+     * Creates a label for a section.
+     * @param theText text for the label
+     * @return a label for the section
+     */
+    private JLabel sectionLabel(String theText) {
+        JLabel lbl = new JLabel(theText);
         lbl.setForeground(TEXT_MUT);
         lbl.setFont(new Font("SansSerif", Font.BOLD, 10));
         lbl.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));

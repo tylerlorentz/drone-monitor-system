@@ -1,7 +1,7 @@
 package controller;
 
-import model.AnomalyRecord;
 import model.Drone;
+import model.AnomalyRecord;
 import view.Dashboard;
 
 import java.util.ArrayList;
@@ -112,7 +112,7 @@ public class DroneMonitorApp {
             }
             System.out.println("====================================");
 
-            Thread.sleep(CYCLE_INTERVAL_MS);
+            Thread.sleep(2000);
         }
     }
 }
