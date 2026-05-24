@@ -2,6 +2,7 @@ package view;
 
 import controller.AnomalyDatabase;
 import controller.CSVExporter;
+import controller.DroneMonitorApp;
 import model.AnomalyRecord;
 import model.Drone;
 import model.DroneStatus;
@@ -35,6 +36,7 @@ import java.util.Set;
  * the controller (DroneMonitorApp) on every telemetry cycle.
  */
 public class Dashboard extends JFrame {
+    private DroneMonitorApp app;
 
     // -------------------------
     // COLOUR PALETTE
@@ -112,6 +114,10 @@ public class Dashboard extends JFrame {
         this.db = db;
     }
 
+    public void setApp(DroneMonitorApp app) {
+        this.app = app;
+    }
+
     /**
      * Refreshes all UI elements with the latest telemetry and anomalies.
      * Must be called on the EDT (DroneMonitorApp wraps this in invokeLater).
@@ -164,9 +170,9 @@ public class Dashboard extends JFrame {
 
         // FILE
         JMenu fileMenu = styledMenu("File");
-        JMenuItem saveCsvItem    = styledMenuItem("Save Anomaly Log to CSV");
-        JMenuItem queryItem      = styledMenuItem("Query Anomaly Database…");
-        JMenuItem exitItem       = styledMenuItem("Exit");
+        JMenuItem saveCsvItem = styledMenuItem("Save Anomaly Log to CSV");
+        JMenuItem queryItem   = styledMenuItem("Query Anomaly Database…");
+        JMenuItem exitItem    = styledMenuItem("Exit");
 
         saveCsvItem.addActionListener(e -> saveAnomalyLogToCSV());
         queryItem.addActionListener(e -> openQueryDialog());
@@ -177,8 +183,30 @@ public class Dashboard extends JFrame {
         fileMenu.addSeparator();
         fileMenu.add(exitItem);
 
+        // SETTINGS
+        JMenu settingsMenu = styledMenu("Settings");
+        JMenuItem pauseItem = styledMenuItem("Pause Telemetry");
+        JMenuItem muteItem  = styledMenuItem("Mute Alerts");
+
+        pauseItem.addActionListener(e -> {
+            if (app != null) {
+                app.togglePause();
+                pauseItem.setText(app.isPaused() ? "Resume Telemetry" : "Pause Telemetry");
+            }
+        });
+
+        muteItem.addActionListener(e -> {
+            if (app != null) {
+                app.toggleMute();
+                muteItem.setText(app.isMuted() ? "Unmute Alerts" : "Mute Alerts");
+            }
+        });
+
+        settingsMenu.add(pauseItem);
+        settingsMenu.add(muteItem);
+
         // HELP
-        JMenu helpMenu    = styledMenu("Help");
+        JMenu helpMenu      = styledMenu("Help");
         JMenuItem aboutItem = styledMenuItem("About");
         JMenuItem instrItem = styledMenuItem("Instructions");
 
@@ -189,6 +217,7 @@ public class Dashboard extends JFrame {
         helpMenu.add(instrItem);
 
         bar.add(fileMenu);
+        bar.add(settingsMenu);
         bar.add(helpMenu);
         return bar;
     }

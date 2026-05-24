@@ -25,7 +25,30 @@ public class DroneMonitorApp {
 
     private static final int CYCLE_INTERVAL_MS = 2000;
 
+    // -------------------------
+    // PAUSE / MUTE FLAGS
+    // volatile because the loop runs on the main thread
+    // while the UI toggles these from the EDT
+    // -------------------------
+    private volatile boolean paused = false;
+    private volatile boolean muted  = false;
+
+    public boolean isPaused() { return paused; }
+    public boolean isMuted()  { return muted;  }
+    public void togglePause() { paused = !paused; }
+    public void toggleMute()  { muted  = !muted;  }
+
+    // -------------------------
+    // ENTRY POINT
+    // -------------------------
     public static void main(String[] args) throws InterruptedException {
+        new DroneMonitorApp().run();
+    }
+
+    // -------------------------
+    // MAIN RUN METHOD
+    // -------------------------
+    public void run() throws InterruptedException {
 
         // -------------------------
         // 1. INITIALISE FLEET
@@ -49,6 +72,7 @@ public class DroneMonitorApp {
         // -------------------------
         Dashboard view = new Dashboard();
         view.setDatabase(database);
+        view.setApp(this);  // give the dashboard a reference to toggle flags
         javax.swing.SwingUtilities.invokeLater(() -> view.setVisible(true));
 
         // Graceful shutdown hook
@@ -63,6 +87,11 @@ public class DroneMonitorApp {
         // -------------------------
         int cycle = 0;
         while (true) {
+            Thread.sleep(CYCLE_INTERVAL_MS);
+
+            // Skip cycle if paused
+            if (paused) continue;
+
             cycle++;
 
             // Update telemetry
@@ -76,8 +105,8 @@ public class DroneMonitorApp {
                 database.insert(a);
             }
 
-            // Audio alerts
-            audio.processAnomalies(anomalies);
+            // Audio alerts (skipped if muted)
+            if (!muted) audio.processAnomalies(anomalies);
 
             // Refresh dashboard (on EDT)
             final List<AnomalyRecord> anomalySnapshot = new ArrayList<>(anomalies);
@@ -89,15 +118,15 @@ public class DroneMonitorApp {
             // -------------------------
             System.out.println("\n====================================");
             System.out.printf(" DRONE FLEET STATUS | CYCLE %d | DB records: %d%n",
-                cycle, database.countAll());
+                    cycle, database.countAll());
             System.out.println("====================================");
 
             for (Drone d : drones) {
                 System.out.printf(
-                    "%s | LAT: %.5f | LON: %.5f | ALT: %.2f | BAT: %.1f%% | VEL: %.5f | ORI: %.1f° | [%s]%n",
-                    d.getId(), d.getLatitude(), d.getLongitude(),
-                    d.getAltitude(), d.getBattery(), d.getVelocity(),
-                    d.getOrientation(), d.getStatus()
+                        "%s | LAT: %.5f | LON: %.5f | ALT: %.2f | BAT: %.1f%% | VEL: %.5f | ORI: %.1f° | [%s]%n",
+                        d.getId(), d.getLatitude(), d.getLongitude(),
+                        d.getAltitude(), d.getBattery(), d.getVelocity(),
+                        d.getOrientation(), d.getStatus()
                 );
             }
 
@@ -105,14 +134,12 @@ public class DroneMonitorApp {
                 System.out.println("\n--- ANOMALIES DETECTED ---");
                 for (AnomalyRecord a : anomalies) {
                     System.out.printf("  %-4s [%-12s] %s%n",
-                        a.getDroneId(), a.getType(), a.getMessage());
+                            a.getDroneId(), a.getType(), a.getMessage());
                 }
             } else {
                 System.out.println("  No anomalies this cycle.");
             }
             System.out.println("====================================");
-
-            Thread.sleep(2000);
         }
     }
 }
