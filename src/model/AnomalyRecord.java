@@ -28,6 +28,15 @@ public class AnomalyRecord {
         this.timestamp = LocalDateTime.now();
     }
 
+    public AnomalyRecord(String droneId, String type, String details,
+                         String severity, LocalDateTime timestamp) {
+        this.droneId   = droneId;
+        this.type      = type;
+        this.details   = details;
+        this.severity  = severity;
+        this.timestamp = timestamp;
+    }
+
     private String deriveSeverity(String type) {
         switch (type) {
             case "CRITICAL_BATTERY":

@@ -167,10 +167,13 @@ public class AnomalyDatabase {
         // We create it via the public constructor; timestamp will be "now",
         // so we override it via a package-level helper if needed.
         // For display purposes this is sufficient.
+        LocalDateTime ts = LocalDateTime.parse(rs.getString("timestamp"), FMT);
         return new AnomalyRecord(
             rs.getString("drone_id"),
             rs.getString("type"),
-            rs.getString("details")
+            rs.getString("details"),
+            rs.getString("severity"),
+            ts
         );
     }
 }
