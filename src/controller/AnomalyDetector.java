@@ -29,7 +29,8 @@ public class AnomalyDetector {
     private static final double ALTITUDE_WARNING        = 5.0;
 
     private final Map<String, double[]> previousStates = new HashMap<>();
-
+    private final Map<String, Integer> hoverCounter = new HashMap<>();
+    
     public List<AnomalyRecord> detect(List<Drone> drones) {
         List<AnomalyRecord> anomalies = new ArrayList<>();
 
