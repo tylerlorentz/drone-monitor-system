@@ -144,10 +144,6 @@ public class AnomalyDatabase {
         }
     }
 
-    // -------------------------
-    // PRIVATE HELPERS
-    // -------------------------
-
     private List<AnomalyRecord> query(String sql, String param) {
         List<AnomalyRecord> results = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -163,14 +159,13 @@ public class AnomalyDatabase {
     }
 
     private AnomalyRecord rowToRecord(ResultSet rs) throws SQLException {
-        // Reconstruct AnomalyRecord from DB columns
-        // We create it via the public constructor; timestamp will be "now",
-        // so we override it via a package-level helper if needed.
-        // For display purposes this is sufficient.
-        return new AnomalyRecord(
-            rs.getString("drone_id"),
-            rs.getString("type"),
-            rs.getString("details")
-        );
+    return new AnomalyRecord(
+        rs.getString("drone_id"),
+        rs.getString("type"),
+        rs.getString("details"),
+        rs.getString("severity"),
+        LocalDateTime.parse(rs.getString("timestamp"), FMT)
+    );
+}
     }
 }
