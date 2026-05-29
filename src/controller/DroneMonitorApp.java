@@ -3,7 +3,9 @@ package controller;
 import model.AnomalyRecord;
 import model.Drone;
 import view.Dashboard;
-
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,6 +52,7 @@ public class DroneMonitorApp {
         Dashboard view = new Dashboard();
         view.setDatabase(database);
         javax.swing.SwingUtilities.invokeLater(() -> view.setVisible(true));
+        view.setTelemetryGenerator(generator);
 
         // Graceful shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -62,44 +65,42 @@ public class DroneMonitorApp {
         // 4. MAIN MONITORING LOOP
         // -------------------------
         int cycle = 0;
-        while (true) {
-            cycle++;
+        ScheduledExecutorService executor =
+            Executors.newSingleThreadScheduledExecutor();
 
-            // Update telemetry
-            generator.updateDrones(drones);
+        executor.scheduleAtFixedRate(new Runnable() {
 
-            // Detect anomalies
-            List<AnomalyRecord> anomalies = detector.detect(drones);
+            int cycle = 0;
 
-            // Persist anomalies to SQLite
-            for (AnomalyRecord a : anomalies) {
-                database.insert(a);
-            }
+            @Override
+            public void run() {
+                cycle++;
 
-            // Audio alerts
-            audio.processAnomalies(anomalies);
+                generator.updateDrones(drones);
 
-            // Refresh dashboard (on EDT)
-            final List<AnomalyRecord> anomalySnapshot = new ArrayList<>(anomalies);
-            final List<Drone>         droneSnapshot   = new ArrayList<>(drones);
-            javax.swing.SwingUtilities.invokeLater(() -> view.display(droneSnapshot, anomalySnapshot));
+                List<AnomalyRecord> anomalies = detector.detect(drones);
 
-            // -------------------------
-            // CONSOLE OUTPUT
-            // -------------------------
-            System.out.println("\n====================================");
-            System.out.printf(" DRONE FLEET STATUS | CYCLE %d | DB records: %d%n",
-                cycle, database.countAll());
-            System.out.println("====================================");
+                for (AnomalyRecord a : anomalies) {
+                    database.insert(a);
+                }
 
-            for (Drone d : drones) {
-                System.out.printf(
-                    "%s | LAT: %.5f | LON: %.5f | ALT: %.2f | BAT: %.1f%% | VEL: %.5f | ORI: %.1f° | [%s]%n",
-                    d.getId(), d.getLatitude(), d.getLongitude(),
-                    d.getAltitude(), d.getBattery(), d.getVelocity(),
-                    d.getOrientation(), d.getStatus()
+                audio.processAnomalies(anomalies);
+
+                final List<AnomalyRecord> anomalySnapshot =
+                    new ArrayList<>(anomalies);
+
+                final List<Drone> droneSnapshot =
+                    new ArrayList<>(drones);
+
+                javax.swing.SwingUtilities.invokeLater(() ->
+                    view.display(droneSnapshot, anomalySnapshot)
                 );
+
+                System.out.println("Cycle: " + cycle +
+                    " | DB records: " + database.countAll());
             }
+
+        }, 0, CYCLE_INTERVAL_MS, TimeUnit.MILLISECONDS);
 
             if (!anomalies.isEmpty()) {
                 System.out.println("\n--- ANOMALIES DETECTED ---");
