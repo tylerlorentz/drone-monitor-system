@@ -27,7 +27,13 @@ public class AnomalyRecord {
         this.severity  = deriveSeverity(type);
         this.timestamp = LocalDateTime.now();
     }
-
+    public String getSeverityIcon() {
+    return switch (severity) {
+        case "CRITICAL" -> "⛔";
+        case "WARNING" -> "⚠";
+        default -> "ℹ";
+    };
+}
     private String deriveSeverity(String type) {
         switch (type) {
             case "CRITICAL_BATTERY":
