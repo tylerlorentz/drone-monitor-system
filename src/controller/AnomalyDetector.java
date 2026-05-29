@@ -86,6 +86,7 @@ public class AnomalyDetector {
                 double prevLon   = prev[1];
                 double prevAlt   = prev[2];
                 double prevOri   = prev[3];
+                double prevBattery = prev[4];
 
                 double latDelta = Math.abs(lat - prevLat);
                 double lonDelta = Math.abs(lon - prevLon);
@@ -101,14 +102,43 @@ public class AnomalyDetector {
                         "Sudden altitude drop of " + String.format("%.2f", altDrop) + "m in one cycle"));
                 }
 
+                if ((prevBattery - battery) > 5.0) {
+                    anomalies.add(new AnomalyRecord(
+                        d.getId(),
+                        "RAPID_BATTERY_DRAIN",
+                        "Battery dropped rapidly in one cycle"
+                    ));
+                }
+
                 double turnDelta = headingDelta(prevOri, orientation);
                 if (turnDelta > SHARP_TURN_THRESHOLD) {
                     anomalies.add(new AnomalyRecord(d.getId(), "SHARP_TURN",
                         "Sharp turn detected: " + String.format("%.1f", turnDelta) + "° change in one cycle"));
                 }
-            }
 
-            previousStates.put(d.getId(), new double[]{lat, lon, altitude, orientation});
+                if (velocity < 0.00005) {
+                    hoverCounter.put(d.getId(), hoverCounter.getOrDefault(d.getId(), 0) + 1);
+
+                    if (hoverCounter.get(d.getId()) >= 5) {
+                        anomalies.add(new AnomalyRecord(
+                            d.getId(),
+                            "SUSPICIOUS_HOVERING",
+                            "Drone has remained nearly stationary for multiple cycles"
+                        ));
+                    }
+                } else {
+                    hoverCounter.put(d.getId(), 0);
+                }   
+
+                if (turnDelta > 140 && velocity > 0.0004) {
+                    anomalies.add(new AnomalyRecord(
+                        d.getId(),
+                        "ERRATIC_MOVEMENT",
+                        "Extreme directional changes detected"
+                    ));
+                }
+            }
+            previousStates.put(d.getId(), new double[]{lat, lon, altitude, orientation, battery });
         }
 
         return anomalies;
