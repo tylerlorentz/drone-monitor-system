@@ -14,11 +14,11 @@ public class AnomalyRecord {
     private static final DateTimeFormatter FORMATTER =
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private String droneId;
-    private String type;
-    private String details;
-    private String severity;
-    private LocalDateTime timestamp;
+    private final String droneId;
+    private final String type;
+    private final String details;
+    private final String severity;
+    private final LocalDateTime timestamp;
 
     public AnomalyRecord(String droneId, String type, String details) {
         this.droneId   = droneId;
@@ -27,6 +27,16 @@ public class AnomalyRecord {
         this.severity  = deriveSeverity(type);
         this.timestamp = LocalDateTime.now();
     }
+
+    public AnomalyRecord(String droneId, String type, String details,
+                         String severity, LocalDateTime timestamp) {
+        this.droneId   = droneId;
+        this.type      = type;
+        this.details   = details;
+        this.severity  = severity;
+        this.timestamp = timestamp;
+    }
+
     public String getSeverityIcon() {
     return switch (severity) {
         case "CRITICAL" -> "⛔";
@@ -34,22 +44,14 @@ public class AnomalyRecord {
         default -> "ℹ";
     };
 }
+
     private String deriveSeverity(String type) {
-        switch (type) {
-            case "CRITICAL_BATTERY":
-            case "CRASH_RISK":
-            case "EMERGENCY_RISK":
-                return "CRITICAL";
-            case "LOW_BATTERY":
-            case "ALTITUDE_RISK":
-            case "HIGH_VELOCITY":
-            case "GPS_SPOOFING":
-            case "ALTITUDE_DROP":
-            case "SHARP_TURN":
-                return "WARNING";
-            default:
-                return "INFO";
-        }
+        return switch (type) {
+            case "CRITICAL_BATTERY", "CRASH_RISK", "EMERGENCY_RISK" -> "CRITICAL";
+            case "LOW_BATTERY", "ALTITUDE_RISK", "HIGH_VELOCITY", "GPS_SPOOFING", "ALTITUDE_DROP", "SHARP_TURN" ->
+                    "WARNING";
+            default -> "INFO";
+        };
     }
 
     public String getDroneId()  { return droneId; }
