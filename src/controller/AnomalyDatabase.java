@@ -144,6 +144,9 @@ public class AnomalyDatabase {
         }
     }
 
+    // -------------------------
+    // PRIVATE HELPERS
+    // -------------------------
     private List<AnomalyRecord> query(String sql, String param) {
         List<AnomalyRecord> results = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -159,13 +162,12 @@ public class AnomalyDatabase {
     }
 
     private AnomalyRecord rowToRecord(ResultSet rs) throws SQLException {
-    return new AnomalyRecord(
-        rs.getString("drone_id"),
-        rs.getString("type"),
-        rs.getString("details"),
-        rs.getString("severity"),
-        LocalDateTime.parse(rs.getString("timestamp"), FMT)
-    );
-}
+        return new AnomalyRecord(
+            rs.getString("drone_id"),
+            rs.getString("type"),
+            rs.getString("details"),
+            rs.getString("severity"),
+            LocalDateTime.parse(rs.getString("timestamp"), FMT)
+        );
     }
 }
