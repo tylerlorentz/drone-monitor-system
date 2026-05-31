@@ -16,9 +16,6 @@ public class TelemetryGenerator {
 
     private final Random rand = new Random();
 
-    private boolean gpsAttackMode = false;
-    private boolean batteryFailureMode = false;
-    private boolean crashMode = false;
     private static final double POSITION_DRIFT    = 0.0008;
     private static final double ALTITUDE_DRIFT    = 0.4;
     private static final double BATTERY_DRAIN_MIN = 0.15;
@@ -71,7 +68,7 @@ public class TelemetryGenerator {
             // 5. SCRIPTED ANOMALY INJECTION (for demonstration / testing)
             // -------------------------
             if (rand.nextDouble() < ANOMALY_CHANCE) {
-                int scenario = rand.nextInt(3);
+                int scenario = rand.nextInt(4);
                 switch (scenario) {
                     case 0: // sudden altitude drop
                         newAlt = Math.max(0, newAlt - 15.0);
@@ -83,33 +80,12 @@ public class TelemetryGenerator {
                         newLat = clampLatitude(newLat   + (rand.nextBoolean() ? 0.08 : -0.08));
                         newLon = clampLongitude(newLon  + (rand.nextBoolean() ? 0.08 : -0.08));
                         break;
+                    case 3: // Battery Failure
+                        newBattery = Math.max(0, newBattery - 8);
+                        break;
                 }
             }
 
-            public void toggleGpsAttack() {
-                gpsAttackMode = !gpsAttackMode;
-            }        
-
-            public void toggleBatteryFailure() {
-                batteryFailureMode = !batteryFailureMode;
-            }
-
-            public void toggleCrashMode() {
-                crashMode = !crashMode;
-            }
-
-            if (gpsAttackMode) {
-                newLat += 0.08;
-                newLon += 0.08;
-            }
-
-            if (batteryFailureMode) {
-                newBattery = Math.max(0, newBattery - 8);
-            }
-
-            if (crashMode) {
-                newAlt = Math.max(0, newAlt - 12);
-            }
             // -------------------------
             // 6. APPLY FULL UPDATE (velocity + orientation now included)
             // -------------------------
