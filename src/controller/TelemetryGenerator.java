@@ -61,7 +61,7 @@ public class TelemetryGenerator {
             // 4. BATTERY DRAIN MODEL
             // -------------------------
             double drain      = BATTERY_DRAIN_MIN
-                + (rand.nextDouble() * (BATTERY_DRAIN_MAX - BATTERY_DRAIN_MIN));
+                    + (rand.nextDouble() * (BATTERY_DRAIN_MAX - BATTERY_DRAIN_MIN));
             double newBattery = Math.max(0, d.getBattery() - drain);
 
             // -------------------------

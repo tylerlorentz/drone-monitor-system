@@ -24,7 +24,7 @@ public class AnomalyDatabase {
 
     private static final String DB_URL = "jdbc:sqlite:drone_monitor.db";
     private static final DateTimeFormatter FMT =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private Connection conn;
 
@@ -163,11 +163,11 @@ public class AnomalyDatabase {
 
     private AnomalyRecord rowToRecord(ResultSet rs) throws SQLException {
         return new AnomalyRecord(
-            rs.getString("drone_id"),
-            rs.getString("type"),
-            rs.getString("details"),
-            rs.getString("severity"),
-            LocalDateTime.parse(rs.getString("timestamp"), FMT)
+                rs.getString("drone_id"),
+                rs.getString("type"),
+                rs.getString("details"),
+                rs.getString("severity"),
+                LocalDateTime.parse(rs.getString("timestamp"), FMT)
         );
     }
 }

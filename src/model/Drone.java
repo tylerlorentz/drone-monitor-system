@@ -75,8 +75,8 @@ public class Drone {
     @Override
     public String toString() {
         return String.format(
-            "%s | lat=%.5f lon=%.5f alt=%.2f battery=%.1f%% vel=%.5f ori=%.1f° [%s]",
-            id, latitude, longitude, altitude, battery, velocity, orientation, getStatus()
+                "%s | lat=%.5f lon=%.5f alt=%.2f battery=%.1f%% vel=%.5f ori=%.1f° [%s]",
+                id, latitude, longitude, altitude, battery, velocity, orientation, getStatus()
         );
     }
 }

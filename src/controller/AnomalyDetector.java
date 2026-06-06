@@ -30,7 +30,7 @@ public class AnomalyDetector {
 
     private final Map<String, double[]> previousStates = new HashMap<>();
     private final Map<String, Integer> hoverCounter = new HashMap<>();
-    
+
     public List<AnomalyRecord> detect(List<Drone> drones) {
         List<AnomalyRecord> anomalies = new ArrayList<>();
 
@@ -45,38 +45,38 @@ public class AnomalyDetector {
             // Battery checks
             if (battery <= BATTERY_CRITICAL) {
                 anomalies.add(new AnomalyRecord(d.getId(), "CRITICAL_BATTERY",
-                    "Battery critically low: " + String.format("%.1f", battery) + "%"));
+                        "Battery critically low: " + String.format("%.1f", battery) + "%"));
             } else if (battery < BATTERY_WARNING) {
                 anomalies.add(new AnomalyRecord(d.getId(), "LOW_BATTERY",
-                    "Battery warning: " + String.format("%.1f", battery) + "%"));
+                        "Battery warning: " + String.format("%.1f", battery) + "%"));
             }
 
             // Altitude checks
             if (altitude <= ALTITUDE_CRITICAL) {
                 anomalies.add(new AnomalyRecord(d.getId(), "CRASH_RISK",
-                    "Dangerously low altitude: " + String.format("%.2f", altitude) + "m"));
+                        "Dangerously low altitude: " + String.format("%.2f", altitude) + "m"));
             } else if (altitude < ALTITUDE_WARNING) {
                 anomalies.add(new AnomalyRecord(d.getId(), "ALTITUDE_RISK",
-                    "Low altitude warning: " + String.format("%.2f", altitude) + "m"));
+                        "Low altitude warning: " + String.format("%.2f", altitude) + "m"));
             }
 
             // GPS validity
             if (Math.abs(lat) > 90 || Math.abs(lon) > 180) {
                 anomalies.add(new AnomalyRecord(d.getId(), "GPS_ERROR",
-                    "Invalid GPS coordinates: (" + String.format("%.5f", lat)
-                        + ", " + String.format("%.5f", lon) + ")"));
+                        "Invalid GPS coordinates: (" + String.format("%.5f", lat)
+                                + ", " + String.format("%.5f", lon) + ")"));
             }
 
             // High velocity
             if (velocity > HIGH_VELOCITY_THRESHOLD) {
                 anomalies.add(new AnomalyRecord(d.getId(), "HIGH_VELOCITY",
-                    "Abnormal movement speed: " + String.format("%.5f", velocity)));
+                        "Abnormal movement speed: " + String.format("%.5f", velocity)));
             }
 
             // Combined emergency
             if (battery < BATTERY_WARNING && altitude < ALTITUDE_WARNING) {
                 anomalies.add(new AnomalyRecord(d.getId(), "EMERGENCY_RISK",
-                    "Low battery AND low altitude — high crash risk"));
+                        "Low battery AND low altitude — high crash risk"));
             }
 
             // Delta-based checks
@@ -92,28 +92,28 @@ public class AnomalyDetector {
                 double lonDelta = Math.abs(lon - prevLon);
                 if (latDelta > GPS_JUMP_THRESHOLD || lonDelta > GPS_JUMP_THRESHOLD) {
                     anomalies.add(new AnomalyRecord(d.getId(), "GPS_SPOOFING",
-                        "Sudden location jump detected — Δlat=" + String.format("%.5f", latDelta)
-                            + " Δlon=" + String.format("%.5f", lonDelta)));
+                            "Sudden location jump detected — Δlat=" + String.format("%.5f", latDelta)
+                                    + " Δlon=" + String.format("%.5f", lonDelta)));
                 }
 
                 double altDrop = prevAlt - altitude;
                 if (altDrop > ALTITUDE_DROP_THRESHOLD) {
                     anomalies.add(new AnomalyRecord(d.getId(), "ALTITUDE_DROP",
-                        "Sudden altitude drop of " + String.format("%.2f", altDrop) + "m in one cycle"));
+                            "Sudden altitude drop of " + String.format("%.2f", altDrop) + "m in one cycle"));
                 }
 
                 if ((prevBattery - battery) > 5.0) {
                     anomalies.add(new AnomalyRecord(
-                        d.getId(),
-                        "RAPID_BATTERY_DRAIN",
-                        "Battery dropped rapidly in one cycle"
+                            d.getId(),
+                            "RAPID_BATTERY_DRAIN",
+                            "Battery dropped rapidly in one cycle"
                     ));
                 }
 
                 double turnDelta = headingDelta(prevOri, orientation);
                 if (turnDelta > SHARP_TURN_THRESHOLD) {
                     anomalies.add(new AnomalyRecord(d.getId(), "SHARP_TURN",
-                        "Sharp turn detected: " + String.format("%.1f", turnDelta) + "° change in one cycle"));
+                            "Sharp turn detected: " + String.format("%.1f", turnDelta) + "° change in one cycle"));
                 }
 
                 if (velocity < 0.00005) {
@@ -121,20 +121,20 @@ public class AnomalyDetector {
 
                     if (hoverCounter.get(d.getId()) >= 5) {
                         anomalies.add(new AnomalyRecord(
-                            d.getId(),
-                            "SUSPICIOUS_HOVERING",
-                            "Drone has remained nearly stationary for multiple cycles"
+                                d.getId(),
+                                "SUSPICIOUS_HOVERING",
+                                "Drone has remained nearly stationary for multiple cycles"
                         ));
                     }
                 } else {
                     hoverCounter.put(d.getId(), 0);
-                }   
+                }
 
                 if (turnDelta > 140 && velocity > 0.0004) {
                     anomalies.add(new AnomalyRecord(
-                        d.getId(),
-                        "ERRATIC_MOVEMENT",
-                        "Extreme directional changes detected"
+                            d.getId(),
+                            "ERRATIC_MOVEMENT",
+                            "Extreme directional changes detected"
                     ));
                 }
             }

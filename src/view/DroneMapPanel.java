@@ -108,7 +108,7 @@ public class DroneMapPanel extends JPanel {
         // Glow ring
         g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 40));
         g2.fillOval(px - DRONE_RADIUS * 2, py - DRONE_RADIUS * 2,
-                    DRONE_RADIUS * 4, DRONE_RADIUS * 4);
+                DRONE_RADIUS * 4, DRONE_RADIUS * 4);
 
         // Arrow body — rotate to match heading (0 = North = up)
         AffineTransform old = g2.getTransform();
@@ -129,7 +129,7 @@ public class DroneMapPanel extends JPanel {
         // Solid dot at centre
         g2.setColor(color);
         g2.fillOval(px - DRONE_RADIUS / 2, py - DRONE_RADIUS / 2,
-                    DRONE_RADIUS, DRONE_RADIUS);
+                DRONE_RADIUS, DRONE_RADIUS);
 
         // ID label
         g2.setColor(TEXT_COLOR);

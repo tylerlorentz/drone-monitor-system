@@ -27,7 +27,7 @@ public class DroneMonitorApp {
 
     private static final int CYCLE_INTERVAL_MS = 2000;
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
 
         // -------------------------
         // 1. INITIALISE FLEET
@@ -64,9 +64,8 @@ public class DroneMonitorApp {
         // -------------------------
         // 4. MAIN MONITORING LOOP
         // -------------------------
-        int cycle = 0;
         ScheduledExecutorService executor =
-            Executors.newSingleThreadScheduledExecutor();
+                Executors.newSingleThreadScheduledExecutor();
 
         executor.scheduleAtFixedRate(new Runnable() {
 
@@ -87,33 +86,20 @@ public class DroneMonitorApp {
                 audio.processAnomalies(anomalies);
 
                 final List<AnomalyRecord> anomalySnapshot =
-                    new ArrayList<>(anomalies);
+                        new ArrayList<>(anomalies);
 
                 final List<Drone> droneSnapshot =
-                    new ArrayList<>(drones);
+                        new ArrayList<>(drones);
 
                 javax.swing.SwingUtilities.invokeLater(() ->
-                    view.display(droneSnapshot, anomalySnapshot)
+                        view.display(droneSnapshot, anomalySnapshot)
                 );
 
                 System.out.println("Cycle: " + cycle +
-                    " | DB records: " + database.countAll());
+                        " | DB records: " + database.countAll());
             }
 
         }, 0, CYCLE_INTERVAL_MS, TimeUnit.MILLISECONDS);
 
-            if (!anomalies.isEmpty()) {
-                System.out.println("\n--- ANOMALIES DETECTED ---");
-                for (AnomalyRecord a : anomalies) {
-                    System.out.printf("  %-4s [%-12s] %s%n",
-                        a.getDroneId(), a.getType(), a.getMessage());
-                }
-            } else {
-                System.out.println("  No anomalies this cycle.");
-            }
-            System.out.println("====================================");
-
-            Thread.sleep(CYCLE_INTERVAL_MS);
-        }
     }
 }

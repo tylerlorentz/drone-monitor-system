@@ -7,6 +7,7 @@ import model.Drone;
 import model.DroneStatus;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.IOException;
@@ -27,6 +28,7 @@ public class Dashboard extends JFrame {
     private static final Color BORDER   = new Color(40, 48, 65);
     private static final Color COL_WARN = new Color(251, 191, 36);
     private static final Color COL_CRIT = new Color(239, 68, 68);
+    private static final Color COL_INFO = new Color(56, 189, 248);
 
     // -------------------------
     // UI STATE
@@ -60,7 +62,7 @@ public class Dashboard extends JFrame {
     // -------------------------
     public Dashboard() {
         setTitle("Drone Fleet Security Monitor");
-        setSize(1100, 720);
+        setSize(1100, 760);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -106,13 +108,19 @@ public class Dashboard extends JFrame {
 
         currentDrones = new ArrayList<>(drones);
 
-        // fleet list
+        // Preserve selection across updates
+        String selectedId = fleetList.getSelectedValue();
+
         fleetListModel.clear();
         for (Drone d : drones) {
             fleetListModel.addElement(d.getId());
         }
 
-        if (!drones.isEmpty() && fleetList.getSelectedIndex() == -1) {
+        // Restore previously selected drone, or default to first
+        if (selectedId != null) {
+            fleetList.setSelectedValue(selectedId, false);
+        }
+        if (fleetList.getSelectedIndex() == -1 && !drones.isEmpty()) {
             fleetList.setSelectedIndex(0);
         }
 
@@ -120,21 +128,16 @@ public class Dashboard extends JFrame {
 
         for (AnomalyRecord a : anomalies) {
             anomalyLog.add(a);
-            anomalyTableModel.insertRow(0, new Object[]{
-                a.getDroneId(),
-                a.getType(),
-                a.getSeverity(),
-                a.getDetails(),
-                a.getFormattedTimestamp()
-            });
         }
 
+        applyFilterAndRebuildTable();
+
         long criticalCount = anomalyLog.stream()
-                .filter(a -> a.getSeverity().equals("CRITICAL"))
+                .filter(a -> "CRITICAL".equals(a.getSeverity()))
                 .count();
 
         long warningCount = anomalyLog.stream()
-                .filter(a -> a.getSeverity().equals("WARNING"))
+                .filter(a -> "WARNING".equals(a.getSeverity()))
                 .count();
 
         double avgBattery = drones.stream()
@@ -151,6 +154,91 @@ public class Dashboard extends JFrame {
     }
 
     // -------------------------
+    // FLEET PANEL
+    // -------------------------
+    private JPanel buildFleetPanel() {
+        JPanel panel = new JPanel(new BorderLayout(0, 6));
+        panel.setBackground(BG_PANEL);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER),
+                BorderFactory.createEmptyBorder(8, 8, 8, 8)
+        ));
+        panel.setPreferredSize(new Dimension(130, 0));
+
+        JLabel title = new JLabel("FLEET");
+        title.setForeground(TEXT_MUT);
+        title.setFont(new Font("SansSerif", Font.BOLD, 11));
+        panel.add(title, BorderLayout.NORTH);
+
+        fleetListModel = new DefaultListModel<>();
+        fleetList = new JList<>(fleetListModel);
+        fleetList.setBackground(BG_CARD);
+        fleetList.setForeground(TEXT_PRI);
+        fleetList.setSelectionBackground(ACCENT.darker());
+        fleetList.setSelectionForeground(Color.WHITE);
+        fleetList.setFont(new Font("Monospaced", Font.BOLD, 13));
+        fleetList.setFixedCellHeight(32);
+        fleetList.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+
+        // Update telemetry panel when a drone is selected
+        fleetList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                refreshTelemetry();
+            }
+        });
+
+        JScrollPane scroll = new JScrollPane(fleetList);
+        scroll.setBorder(BorderFactory.createLineBorder(BORDER));
+        scroll.getViewport().setBackground(BG_CARD);
+        panel.add(scroll, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    // -------------------------
+    // MENU BAR
+    // -------------------------
+    private JMenuBar buildMenuBar() {
+        JMenuBar bar = new JMenuBar();
+        bar.setBackground(BG_PANEL);
+        bar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER));
+
+        // File menu
+        JMenu fileMenu = new JMenu("File");
+        fileMenu.setForeground(TEXT_PRI);
+
+        JMenuItem exportItem = new JMenuItem("Export CSV…");
+        exportItem.setBackground(BG_PANEL);
+        exportItem.setForeground(TEXT_PRI);
+        exportItem.addActionListener(e -> exportCSV());
+
+        JMenuItem exitItem = new JMenuItem("Exit");
+        exitItem.setBackground(BG_PANEL);
+        exitItem.setForeground(TEXT_PRI);
+        exitItem.addActionListener(e -> confirmExit());
+
+        fileMenu.add(exportItem);
+        fileMenu.addSeparator();
+        fileMenu.add(exitItem);
+
+        // Query menu
+        JMenu queryMenu = new JMenu("Database");
+        queryMenu.setForeground(TEXT_PRI);
+
+        JMenuItem queryItem = new JMenuItem("Query Anomalies…");
+        queryItem.setBackground(BG_PANEL);
+        queryItem.setForeground(TEXT_PRI);
+        queryItem.addActionListener(e -> openQueryDialog());
+
+        queryMenu.add(queryItem);
+
+        bar.add(fileMenu);
+        bar.add(queryMenu);
+
+        return bar;
+    }
+
+    // -------------------------
     // STATISTICS PANEL
     // -------------------------
     private JPanel buildStatisticsPanel() {
@@ -158,26 +246,30 @@ public class Dashboard extends JFrame {
         JPanel panel = darkCard();
         panel.setLayout(new GridLayout(1, 4, 10, 0));
 
-        totalAnomaliesValue = createStatCard(panel, "TOTAL ANOMALIES", "0");
-        criticalValue       = createStatCard(panel, "CRITICAL", "0");
-        warningValue        = createStatCard(panel, "WARNINGS", "0");
-        avgBatteryValue     = createStatCard(panel, "AVG BATTERY", "0%");
+        totalAnomaliesValue = createStatCard(panel, "TOTAL ANOMALIES", "0", TEXT_PRI);
+        criticalValue       = createStatCard(panel, "CRITICAL",        "0", COL_CRIT);
+        warningValue        = createStatCard(panel, "WARNINGS",        "0", COL_WARN);
+        avgBatteryValue     = createStatCard(panel, "AVG BATTERY",     "0%", ACCENT);
 
         return panel;
     }
 
-    private JLabel createStatCard(JPanel panel, String title, String value) {
+    private JLabel createStatCard(JPanel panel, String title, String value, Color valueColor) {
 
-        JPanel card = new JPanel(new BorderLayout());
+        JPanel card = new JPanel(new BorderLayout(0, 4));
         card.setBackground(BG_CARD);
-        card.setBorder(BorderFactory.createLineBorder(BORDER));
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER),
+                BorderFactory.createEmptyBorder(10, 12, 10, 12)
+        ));
 
         JLabel titleLabel = new JLabel(title);
         titleLabel.setForeground(TEXT_MUT);
+        titleLabel.setFont(new Font("SansSerif", Font.PLAIN, 10));
 
         JLabel valueLabel = new JLabel(value);
-        valueLabel.setForeground(ACCENT);
-        valueLabel.setFont(new Font("Monospaced", Font.BOLD, 18));
+        valueLabel.setForeground(valueColor);
+        valueLabel.setFont(new Font("Monospaced", Font.BOLD, 20));
 
         card.add(titleLabel, BorderLayout.NORTH);
         card.add(valueLabel, BorderLayout.CENTER);
@@ -191,15 +283,20 @@ public class Dashboard extends JFrame {
     // SEVERITY FILTER
     // -------------------------
     private void applySeverityFilter() {
+        applyFilterAndRebuildTable();
+    }
 
+    /** Rebuilds the anomaly table respecting the current severity filter. */
+    private void applyFilterAndRebuildTable() {
         String selected = (String) severityFilter.getSelectedItem();
-
         anomalyTableModel.setRowCount(0);
 
-        for (AnomalyRecord a : anomalyLog) {
+        // Show most-recent first
+        for (int i = anomalyLog.size() - 1; i >= 0; i--) {
+            AnomalyRecord a = anomalyLog.get(i);
             if ("ALL".equals(selected) || selected.equals(a.getSeverity())) {
                 anomalyTableModel.addRow(new Object[]{
-                        a.getDroneId(),
+                        a.getSeverityIcon() + " " + a.getDroneId(),
                         a.getType(),
                         a.getSeverity(),
                         a.getDetails(),
@@ -216,26 +313,36 @@ public class Dashboard extends JFrame {
 
         JPanel wrapper = darkCard();
         wrapper.setLayout(new BorderLayout());
+        wrapper.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER),
+                BorderFactory.createEmptyBorder(8, 8, 8, 8)
+        ));
 
         JPanel grid = new JPanel(new GridLayout(1, 6, 10, 0));
         grid.setOpaque(false);
 
         String[] labels = {
-                "DRONE ID", "ALT", "BATTERY",
-                "VEL", "LAT", "LON"
+                "DRONE ID", "ALTITUDE (m)", "BATTERY (%)",
+                "VELOCITY", "LATITUDE", "LONGITUDE"
         };
 
         telemetryValues = new JLabel[6];
 
         for (int i = 0; i < 6; i++) {
-            JPanel card = new JPanel(new BorderLayout());
+            JPanel card = new JPanel(new BorderLayout(0, 4));
             card.setBackground(BG_CARD);
+            card.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(BORDER),
+                    BorderFactory.createEmptyBorder(8, 10, 8, 10)
+            ));
 
             JLabel title = new JLabel(labels[i]);
             title.setForeground(TEXT_MUT);
+            title.setFont(new Font("SansSerif", Font.PLAIN, 10));
 
             JLabel value = new JLabel("—");
             value.setForeground(ACCENT);
+            value.setFont(new Font("Monospaced", Font.BOLD, 14));
 
             telemetryValues[i] = value;
 
@@ -254,8 +361,11 @@ public class Dashboard extends JFrame {
     // -------------------------
     private JPanel buildMapPanel() {
         JPanel panel = darkCard();
+        panel.setLayout(new BorderLayout());
+        panel.setBorder(BorderFactory.createLineBorder(BORDER));
         mapPanel = new DroneMapPanel();
-        panel.add(mapPanel);
+        mapPanel.setPreferredSize(new Dimension(0, 220));
+        panel.add(mapPanel, BorderLayout.CENTER);
         return panel;
     }
 
@@ -265,21 +375,79 @@ public class Dashboard extends JFrame {
     private JPanel buildAnomalyPanel() {
 
         JPanel panel = darkCard();
-        panel.setLayout(new BorderLayout());
+        panel.setLayout(new BorderLayout(0, 6));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER),
+                BorderFactory.createEmptyBorder(8, 8, 8, 8)
+        ));
+        panel.setPreferredSize(new Dimension(0, 200));
 
-        String[] cols = {"ID", "TYPE", "SEVERITY", "DETAILS", "TIME"};
+        // Header row: label + filter
+        JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        header.setOpaque(false);
 
-        anomalyTableModel = new DefaultTableModel(cols, 0);
-        JTable table = new JTable(anomalyTableModel);
+        JLabel label = new JLabel("ANOMALY LOG");
+        label.setForeground(TEXT_MUT);
+        label.setFont(new Font("SansSerif", Font.BOLD, 11));
 
         severityFilter = new JComboBox<>(new String[]{
                 "ALL", "INFO", "WARNING", "CRITICAL"
         });
-
+        severityFilter.setBackground(BG_CARD);
+        severityFilter.setForeground(TEXT_PRI);
+        severityFilter.setFont(new Font("SansSerif", Font.PLAIN, 11));
         severityFilter.addActionListener(e -> applySeverityFilter());
 
-        panel.add(severityFilter, BorderLayout.NORTH);
-        panel.add(new JScrollPane(table), BorderLayout.CENTER);
+        header.add(label);
+        header.add(new JLabel("Filter:") {{
+            setForeground(TEXT_MUT);
+            setFont(new Font("SansSerif", Font.PLAIN, 11));
+        }});
+        header.add(severityFilter);
+
+        String[] cols = {"ID", "TYPE", "SEVERITY", "DETAILS", "TIME"};
+        anomalyTableModel = new DefaultTableModel(cols, 0) {
+            public boolean isCellEditable(int r, int c) { return false; }
+        };
+
+        JTable table = new JTable(anomalyTableModel);
+        table.setBackground(BG_CARD);
+        table.setForeground(TEXT_PRI);
+        table.setGridColor(BORDER);
+        table.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        table.setRowHeight(22);
+        table.setShowVerticalLines(false);
+        table.getTableHeader().setBackground(BG_PANEL);
+        table.getTableHeader().setForeground(TEXT_MUT);
+        table.getTableHeader().setFont(new Font("SansSerif", Font.PLAIN, 11));
+        table.getColumnModel().getColumn(3).setPreferredWidth(320);
+
+        // Colour rows by severity
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable tbl, Object val,
+                                                           boolean selected, boolean focused, int row, int col) {
+                super.getTableCellRendererComponent(tbl, val, selected, focused, row, col);
+                setBackground(BG_CARD);
+                String sev = (String) tbl.getModel().getValueAt(row, 2);
+                if ("CRITICAL".equals(sev)) {
+                    setForeground(COL_CRIT);
+                } else if ("WARNING".equals(sev)) {
+                    setForeground(COL_WARN);
+                } else {
+                    setForeground(COL_INFO);
+                }
+                if (selected) setBackground(BG_PANEL);
+                return this;
+            }
+        });
+
+        JScrollPane scroll = new JScrollPane(table);
+        scroll.setBorder(BorderFactory.createLineBorder(BORDER));
+        scroll.getViewport().setBackground(BG_CARD);
+
+        panel.add(header, BorderLayout.NORTH);
+        panel.add(scroll,  BorderLayout.CENTER);
 
         return panel;
     }
@@ -295,16 +463,44 @@ public class Dashboard extends JFrame {
         Drone d = currentDrones.get(idx);
 
         telemetryValues[0].setText(d.getId());
-        telemetryValues[1].setText(String.valueOf(d.getAltitude()));
-        telemetryValues[2].setText(String.valueOf(d.getBattery()));
-        telemetryValues[3].setText(String.valueOf(d.getVelocity()));
-        telemetryValues[4].setText(String.valueOf(d.getLatitude()));
-        telemetryValues[5].setText(String.valueOf(d.getLongitude()));
+        telemetryValues[1].setText(String.format("%.1f", d.getAltitude()));
+        telemetryValues[2].setText(String.format("%.1f", d.getBattery()));
+        telemetryValues[3].setText(String.format("%.5f", d.getVelocity()));
+        telemetryValues[4].setText(String.format("%.5f", d.getLatitude()));
+        telemetryValues[5].setText(String.format("%.5f", d.getLongitude()));
+
+        // Colour battery value by level
+        double battery = d.getBattery();
+        if (battery <= 5.0) {
+            telemetryValues[2].setForeground(COL_CRIT);
+        } else if (battery < 15.0) {
+            telemetryValues[2].setForeground(COL_WARN);
+        } else {
+            telemetryValues[2].setForeground(ACCENT);
+        }
     }
 
     // -------------------------
     // MENU ACTIONS
     // -------------------------
+    private void exportCSV() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setSelectedFile(new java.io.File("anomaly_log.csv"));
+        int result = chooser.showSaveDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            try {
+                CSVExporter.export(anomalyLog, chooser.getSelectedFile().getAbsolutePath());
+                JOptionPane.showMessageDialog(this,
+                        "Exported " + anomalyLog.size() + " records.",
+                        "Export Complete", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Export failed: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
     private void openQueryDialog() {
 
         if (db == null) {
@@ -321,8 +517,8 @@ public class Dashboard extends JFrame {
     private void confirmExit() {
         int choice = JOptionPane.showConfirmDialog(
                 this,
-                "Exit?",
-                "Confirm",
+                "Exit the Drone Fleet Monitor?",
+                "Confirm Exit",
                 JOptionPane.YES_NO_OPTION
         );
 

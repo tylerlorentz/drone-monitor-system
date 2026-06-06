@@ -24,11 +24,11 @@ public class AudioAlertManager {
     private long lastCriticalAlert = 0;
     private long lastWarningAlert  = 0;
     private final ScheduledExecutorService scheduler =
-        Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "audio-alert");
-            t.setDaemon(true);
-            return t;
-        });
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "audio-alert");
+                t.setDaemon(true);
+                return t;
+            });
 
     /**
      * Scans the anomaly list and plays appropriate audio alerts.
@@ -38,9 +38,9 @@ public class AudioAlertManager {
      */
     public void processAnomalies(List<AnomalyRecord> anomalies) {
         boolean hasCritical = anomalies.stream()
-            .anyMatch(a -> "CRITICAL".equals(a.getSeverity()));
+                .anyMatch(a -> "CRITICAL".equals(a.getSeverity()));
         boolean hasWarning  = anomalies.stream()
-            .anyMatch(a -> "WARNING".equals(a.getSeverity()));
+                .anyMatch(a -> "WARNING".equals(a.getSeverity()));
 
         long now = System.currentTimeMillis();
 

@@ -12,7 +12,7 @@ import java.time.format.DateTimeFormatter;
  */
 public class AnomalyRecord {
     private static final DateTimeFormatter FORMATTER =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final String droneId;
     private final String type;
@@ -38,12 +38,12 @@ public class AnomalyRecord {
     }
 
     public String getSeverityIcon() {
-    return switch (severity) {
-        case "CRITICAL" -> "⛔";
-        case "WARNING" -> "⚠";
-        default -> "ℹ";
-    };
-}
+        return switch (severity) {
+            case "CRITICAL" -> "⛔";
+            case "WARNING" -> "⚠";
+            default -> "ℹ";
+        };
+    }
 
     private String deriveSeverity(String type) {
         return switch (type) {
@@ -71,17 +71,17 @@ public class AnomalyRecord {
      */
     public String toCSVRow() {
         return String.format("%s,%s,%s,\"%s\",%s",
-            droneId,
-            type,
-            severity,
-            details.replace("\"", "\"\""),
-            getFormattedTimestamp()
+                droneId,
+                type,
+                severity,
+                details.replace("\"", "\"\""),
+                getFormattedTimestamp()
         );
     }
 
     @Override
     public String toString() {
         return String.format("[%s] %s | %s | %s: %s",
-            getFormattedTimestamp(), droneId, severity, type, details);
+                getFormattedTimestamp(), droneId, severity, type, details);
     }
 }

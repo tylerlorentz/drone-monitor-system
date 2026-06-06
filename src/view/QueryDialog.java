@@ -33,7 +33,7 @@ public class QueryDialog extends JDialog {
     private static final Color BORDER   = new Color(40,  48,  65);
 
     private static final DateTimeFormatter FMT =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final AnomalyDatabase db;
     private DefaultTableModel resultModel;
@@ -62,8 +62,8 @@ public class QueryDialog extends JDialog {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         panel.setBackground(BG_PANEL);
         panel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDER),
-            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+                BorderFactory.createLineBorder(BORDER),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
 
         String[] modes = {"All Records", "By Drone ID", "By Type", "By Date Range"};
@@ -85,7 +85,7 @@ public class QueryDialog extends JDialog {
         // Initial state
         updateParamLabels("All Records");
         queryTypeBox.addActionListener(e ->
-            updateParamLabels((String) queryTypeBox.getSelectedItem()));
+                updateParamLabels((String) queryTypeBox.getSelectedItem()));
 
         panel.add(styledLabel("Query:"));
         panel.add(queryTypeBox);
@@ -125,7 +125,7 @@ public class QueryDialog extends JDialog {
     private void runQuery() {
         if (db == null) {
             JOptionPane.showMessageDialog(this,
-                "Database not available.", "Error", JOptionPane.ERROR_MESSAGE);
+                    "Database not available.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -145,8 +145,8 @@ public class QueryDialog extends JDialog {
             };
         } catch (DateTimeParseException ex) {
             JOptionPane.showMessageDialog(this,
-                "Invalid date format. Use: yyyy-MM-dd HH:mm:ss",
-                "Parse Error", JOptionPane.ERROR_MESSAGE);
+                    "Invalid date format. Use: yyyy-MM-dd HH:mm:ss",
+                    "Parse Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -154,8 +154,8 @@ public class QueryDialog extends JDialog {
         resultModel.setRowCount(0);
         for (AnomalyRecord r : results) {
             resultModel.addRow(new Object[]{
-                r.getDroneId(), r.getType(), r.getSeverity(),
-                r.getDetails(), r.getFormattedTimestamp()
+                    r.getDroneId(), r.getType(), r.getSeverity(),
+                    r.getDetails(), r.getFormattedTimestamp()
             });
         }
         setTitle("Query Results — " + results.size() + " record(s)");
@@ -208,8 +208,8 @@ public class QueryDialog extends JDialog {
         f.setForeground(TEXT_PRI);
         f.setCaretColor(ACCENT);
         f.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDER),
-            BorderFactory.createEmptyBorder(4, 6, 4, 6)
+                BorderFactory.createLineBorder(BORDER),
+                BorderFactory.createEmptyBorder(4, 6, 4, 6)
         ));
         f.setFont(new Font("Monospaced", Font.PLAIN, 12));
         return f;
