@@ -27,7 +27,30 @@ public class DroneMonitorApp {
 
     private static final int CYCLE_INTERVAL_MS = 2000;
 
+    // -------------------------
+    // PAUSE / MUTE FLAGS
+    // volatile because the scheduler runs on a background thread
+    // while the UI toggles these from the EDT
+    // -------------------------
+    private volatile boolean paused = false;
+    private volatile boolean muted  = false;
+
+    public boolean isPaused() { return paused; }
+    public boolean isMuted()  { return muted;  }
+    public void togglePause() { paused = !paused; }
+    public void toggleMute()  { muted  = !muted;  }
+
+    // -------------------------
+    // ENTRY POINT
+    // -------------------------
     public static void main(String[] args) {
+        new DroneMonitorApp().start();
+    }
+
+    // -------------------------
+    // START METHOD
+    // -------------------------
+    public void start() {
 
         // -------------------------
         // 1. INITIALISE FLEET
@@ -51,8 +74,9 @@ public class DroneMonitorApp {
         // -------------------------
         Dashboard view = new Dashboard();
         view.setDatabase(database);
-        javax.swing.SwingUtilities.invokeLater(() -> view.setVisible(true));
+        view.setApp(this);           // gives the dashboard a reference to toggle pause/mute
         view.setTelemetryGenerator(generator);
+        javax.swing.SwingUtilities.invokeLater(() -> view.setVisible(true));
 
         // Graceful shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -73,6 +97,10 @@ public class DroneMonitorApp {
 
             @Override
             public void run() {
+
+                // Skip cycle if paused
+                if (paused) return;
+
                 cycle++;
 
                 generator.updateDrones(drones);
@@ -83,20 +111,22 @@ public class DroneMonitorApp {
                     database.insert(a);
                 }
 
-                audio.processAnomalies(anomalies);
+                // Audio alerts — skipped when muted
+                if (!muted) {
+                    audio.processAnomalies(anomalies);
+                }
 
-                final List<AnomalyRecord> anomalySnapshot =
-                        new ArrayList<>(anomalies);
-
-                final List<Drone> droneSnapshot =
-                        new ArrayList<>(drones);
+                final List<AnomalyRecord> anomalySnapshot = new ArrayList<>(anomalies);
+                final List<Drone>         droneSnapshot   = new ArrayList<>(drones);
 
                 javax.swing.SwingUtilities.invokeLater(() ->
                         view.display(droneSnapshot, anomalySnapshot)
                 );
 
                 System.out.println("Cycle: " + cycle +
-                        " | DB records: " + database.countAll());
+                        " | DB records: " + database.countAll() +
+                        (muted  ? " [MUTED]"  : "") +
+                        (paused ? " [PAUSED]" : ""));
             }
 
         }, 0, CYCLE_INTERVAL_MS, TimeUnit.MILLISECONDS);

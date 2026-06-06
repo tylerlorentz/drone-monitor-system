@@ -2,6 +2,7 @@ package view;
 
 import controller.AnomalyDatabase;
 import controller.CSVExporter;
+import controller.DroneMonitorApp;
 import model.AnomalyRecord;
 import model.Drone;
 import model.DroneStatus;
@@ -50,12 +51,19 @@ public class Dashboard extends JFrame {
 
     private controller.TelemetryGenerator generator;
 
+    // Settings menu items — held as fields so their text can be toggled
+    private JMenuItem pauseItem;
+    private JMenuItem muteItem;
+
     // -------------------------
     // DATA STATE
     // -------------------------
     private List<Drone> currentDrones = new ArrayList<>();
     private final List<AnomalyRecord> anomalyLog = new ArrayList<>();
     private AnomalyDatabase db;
+
+    /** Reference to the app, injected so Settings menu can call togglePause/toggleMute. */
+    private DroneMonitorApp app;
 
     // -------------------------
     // CONSTRUCTOR
@@ -99,6 +107,11 @@ public class Dashboard extends JFrame {
 
     public void setTelemetryGenerator(controller.TelemetryGenerator generator) {
         this.generator = generator;
+    }
+
+    /** Injected by DroneMonitorApp so the Settings menu can toggle pause/mute. */
+    public void setApp(DroneMonitorApp app) {
+        this.app = app;
     }
 
     // -------------------------
@@ -203,37 +216,47 @@ public class Dashboard extends JFrame {
         bar.setBackground(BG_PANEL);
         bar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER));
 
-        // File menu
-        JMenu fileMenu = new JMenu("File");
-        fileMenu.setForeground(TEXT_PRI);
+        // FILE menu
+        JMenu fileMenu = styledMenu("File");
 
-        JMenuItem exportItem = new JMenuItem("Export CSV…");
-        exportItem.setBackground(BG_PANEL);
-        exportItem.setForeground(TEXT_PRI);
+        JMenuItem exportItem = styledMenuItem("Export CSV…");
         exportItem.addActionListener(e -> exportCSV());
 
-        JMenuItem exitItem = new JMenuItem("Exit");
-        exitItem.setBackground(BG_PANEL);
-        exitItem.setForeground(TEXT_PRI);
+        JMenuItem queryItem = styledMenuItem("Query Anomaly Database…");
+        queryItem.addActionListener(e -> openQueryDialog());
+
+        JMenuItem exitItem = styledMenuItem("Exit");
         exitItem.addActionListener(e -> confirmExit());
 
         fileMenu.add(exportItem);
+        fileMenu.add(queryItem);
         fileMenu.addSeparator();
         fileMenu.add(exitItem);
 
-        // Query menu
-        JMenu queryMenu = new JMenu("Database");
-        queryMenu.setForeground(TEXT_PRI);
+        // SETTINGS menu
+        JMenu settingsMenu = styledMenu("Settings");
 
-        JMenuItem queryItem = new JMenuItem("Query Anomalies…");
-        queryItem.setBackground(BG_PANEL);
-        queryItem.setForeground(TEXT_PRI);
-        queryItem.addActionListener(e -> openQueryDialog());
+        pauseItem = styledMenuItem("Pause Telemetry");
+        pauseItem.addActionListener(e -> {
+            if (app != null) {
+                app.togglePause();
+                pauseItem.setText(app.isPaused() ? "Resume Telemetry" : "Pause Telemetry");
+            }
+        });
 
-        queryMenu.add(queryItem);
+        muteItem = styledMenuItem("Mute Alerts");
+        muteItem.addActionListener(e -> {
+            if (app != null) {
+                app.toggleMute();
+                muteItem.setText(app.isMuted() ? "Unmute Alerts" : "Mute Alerts");
+            }
+        });
+
+        settingsMenu.add(pauseItem);
+        settingsMenu.add(muteItem);
 
         bar.add(fileMenu);
-        bar.add(queryMenu);
+        bar.add(settingsMenu);
 
         return bar;
     }
@@ -390,6 +413,10 @@ public class Dashboard extends JFrame {
         label.setForeground(TEXT_MUT);
         label.setFont(new Font("SansSerif", Font.BOLD, 11));
 
+        JLabel filterLabel = new JLabel("Filter:");
+        filterLabel.setForeground(TEXT_MUT);
+        filterLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
+
         severityFilter = new JComboBox<>(new String[]{
                 "ALL", "INFO", "WARNING", "CRITICAL"
         });
@@ -399,10 +426,7 @@ public class Dashboard extends JFrame {
         severityFilter.addActionListener(e -> applySeverityFilter());
 
         header.add(label);
-        header.add(new JLabel("Filter:") {{
-            setForeground(TEXT_MUT);
-            setFont(new Font("SansSerif", Font.PLAIN, 11));
-        }});
+        header.add(filterLabel);
         header.add(severityFilter);
 
         String[] cols = {"ID", "TYPE", "SEVERITY", "DETAILS", "TIME"};
@@ -502,7 +526,6 @@ public class Dashboard extends JFrame {
     }
 
     private void openQueryDialog() {
-
         if (db == null) {
             JOptionPane.showMessageDialog(this,
                     "Database not connected.",
@@ -510,7 +533,6 @@ public class Dashboard extends JFrame {
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
-
         new QueryDialog(this, db).setVisible(true);
     }
 
@@ -521,7 +543,6 @@ public class Dashboard extends JFrame {
                 "Confirm Exit",
                 JOptionPane.YES_NO_OPTION
         );
-
         if (choice == JOptionPane.YES_OPTION) {
             if (db != null) db.close();
             System.exit(0);
@@ -531,6 +552,19 @@ public class Dashboard extends JFrame {
     // -------------------------
     // HELPERS
     // -------------------------
+    private JMenu styledMenu(String text) {
+        JMenu m = new JMenu(text);
+        m.setForeground(TEXT_PRI);
+        return m;
+    }
+
+    private JMenuItem styledMenuItem(String text) {
+        JMenuItem mi = new JMenuItem(text);
+        mi.setBackground(BG_PANEL);
+        mi.setForeground(TEXT_PRI);
+        return mi;
+    }
+
     private JPanel darkCard() {
         JPanel p = new JPanel();
         p.setBackground(BG_PANEL);
