@@ -2,7 +2,7 @@ package model;
 
 /**
  * Represents a single drone's current state.
- *
+ * <p>
  * Tracks position, altitude, battery, velocity, and orientation.
  * Computes its own DroneStatus based on current telemetry values.
  */
@@ -13,7 +13,7 @@ public class Drone {
     private static final double ALTITUDE_CRITICAL = 2.0;
     private static final double ALTITUDE_WARNING  = 5.0;
 
-    private String id;
+    private final String id;
     private double latitude;
     private double longitude;
     private double altitude;
@@ -21,6 +21,17 @@ public class Drone {
     private double velocity;
     private double orientation; // degrees 0–359, where 0 = North
 
+    /**
+     * Creates a drone with complete telemetry information.
+     *
+     * @param id unique drone identifier
+     * @param lat current latitude
+     * @param lon current longitude
+     * @param alt current altitude
+     * @param battery current battery percentage
+     * @param velocity current velocity
+     * @param orientation current heading in degrees
+     */
     public Drone(String id, double lat, double lon, double alt,
                  double battery, double velocity, double orientation) {
         this.id          = id;
@@ -32,11 +43,30 @@ public class Drone {
         this.orientation = orientation;
     }
 
+    /**
+     * Creates a drone using simplified telemetry information.
+     *
+     * @param id unique drone identifier
+     * @param lat current latitude
+     * @param lon current longitude
+     * @param alt current altitude
+     * @param battery current battery percentage
+     */
     public Drone(String id, double lat, double lon, double alt,
                  double battery, double velocity) {
         this(id, lat, lon, alt, battery, velocity, 0.0);
     }
 
+    /**
+     * Updates all telemetry fields for the drone.
+     *
+     * @param lat new latitude
+     * @param lon new longitude
+     * @param alt new altitude
+     * @param battery new battery percentage
+     * @param velocity new velocity
+     * @param orientation new heading in degrees
+     */
     public void update(double lat, double lon, double alt,
                        double battery, double velocity, double orientation) {
         this.latitude    = lat;
@@ -47,6 +77,15 @@ public class Drone {
         this.orientation = orientation;
     }
 
+    /**
+     * Updates core telemetry values while preserving
+     * existing velocity and orientation data.
+     *
+     * @param lat new latitude
+     * @param lon new longitude
+     * @param alt new altitude
+     * @param battery new battery percentage
+     */
     public void update(double lat, double lon, double alt, double battery) {
         this.latitude = lat;
         this.longitude = lon;
@@ -54,6 +93,12 @@ public class Drone {
         this.battery = battery;
     }
 
+    /**
+     * Determines the drone's operational status based
+     * on battery level and altitude.
+     *
+     * @return the drone status
+     */
     public DroneStatus getStatus() {
         if (battery <= BATTERY_CRITICAL || altitude <= ALTITUDE_CRITICAL) {
             return DroneStatus.CRITICAL;
@@ -72,6 +117,11 @@ public class Drone {
     public double getVelocity()    { return velocity; }
     public double getOrientation() { return orientation; }
 
+    /**
+     * Returns a string representation of the drone.
+     *
+     * @return a formatted drone description
+     */
     @Override
     public String toString() {
         return String.format(

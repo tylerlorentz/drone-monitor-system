@@ -1,8 +1,6 @@
 package view;
 
 import model.Drone;
-import model.DroneStatus;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -11,11 +9,11 @@ import java.util.List;
 
 /**
  * Renders a live grid-based map of all drone positions.
- *
+ * <p>
  * GPS coordinates are mapped into a normalised 0–1 space
  * based on the bounding box of all drone positions, then
  * drawn onto a fixed canvas with padding.
- *
+ * <p>
  * Each drone is drawn as an arrow (showing orientation) with
  * a status-coloured indicator and ID label.
  */
@@ -33,17 +31,30 @@ public class DroneMapPanel extends JPanel {
 
     private List<Drone> drones = new ArrayList<>();
 
+    /**
+     * Constructs a map panel for displaying drone positions.
+     */
     public DroneMapPanel() {
         setBackground(BG);
         setMinimumSize(new Dimension(400, 200));
     }
 
-    /** Called by Dashboard.display() on every telemetry cycle. */
+    /**
+     * Updates the map with the latest drone locations.
+     * Called by Dashboard.display() on every telemetry cycle.
+     *
+     *@param updated updated drone data
+     */
     public void updateDrones(List<Drone> updated) {
         this.drones = new ArrayList<>(updated);
         repaint();
     }
 
+    /**
+     * Renders the drone map visualization.
+     *
+     * @param g the graphics context used for drawing operations
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);

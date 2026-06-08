@@ -5,8 +5,6 @@ import controller.CSVExporter;
 import controller.DroneMonitorApp;
 import model.AnomalyRecord;
 import model.Drone;
-import model.DroneStatus;
-
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -14,6 +12,7 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Dashboard extends JFrame {
 
@@ -65,15 +64,21 @@ public class Dashboard extends JFrame {
     /** Reference to the app, injected so Settings menu can call togglePause/toggleMute. */
     private DroneMonitorApp app;
 
-    // -------------------------
-    // CONSTRUCTOR
-    // -------------------------
+    /**
+     * Constructs and initializes the graphical dashboard.
+     */
     public Dashboard() {
         setTitle("Drone Fleet Security Monitor");
         setSize(1100, 760);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
         addWindowListener(new java.awt.event.WindowAdapter() {
+            /**
+             * Handles window-closing events and performs any required
+             * shutdown operations.
+             *
+             * @param e the window event
+             */
             public void windowClosing(java.awt.event.WindowEvent e) {
                 confirmExit();
             }
@@ -98,25 +103,38 @@ public class Dashboard extends JFrame {
         add(buildAnomalyPanel(), BorderLayout.SOUTH);
     }
 
-    // -------------------------
-    // PUBLIC API
-    // -------------------------
+    /**
+     * Assigns the database used by the dashboard.
+     *
+     * @param db the anomaly database
+     */
     public void setDatabase(AnomalyDatabase db) {
         this.db = db;
     }
 
+    /**
+     * Assigns the telemetry generator used by the dashboard.
+     *
+     * @param generator the telemetry generator
+     */
     public void setTelemetryGenerator(controller.TelemetryGenerator generator) {
         this.generator = generator;
     }
 
-    /** Injected by DroneMonitorApp so the Settings menu can toggle pause/mute. */
+    /**
+     * Injected by DroneMonitorApp so the Settings menu can toggle pause/mute.
+     * */
     public void setApp(DroneMonitorApp app) {
         this.app = app;
     }
 
-    // -------------------------
-    // DISPLAY UPDATE
-    // -------------------------
+    /**
+     * Refreshes dashboard components using the latest fleet
+     * telemetry and anomaly information.
+     *
+     * @param drones current fleet state
+     * @param anomalies detected anomalies
+     */
     public void display(List<Drone> drones, List<AnomalyRecord> anomalies) {
 
         currentDrones = new ArrayList<>(drones);
@@ -139,9 +157,7 @@ public class Dashboard extends JFrame {
 
         refreshTelemetry();
 
-        for (AnomalyRecord a : anomalies) {
-            anomalyLog.add(a);
-        }
+        anomalyLog.addAll(anomalies);
 
         applyFilterAndRebuildTable();
 
@@ -317,7 +333,7 @@ public class Dashboard extends JFrame {
         // Show most-recent first
         for (int i = anomalyLog.size() - 1; i >= 0; i--) {
             AnomalyRecord a = anomalyLog.get(i);
-            if ("ALL".equals(selected) || selected.equals(a.getSeverity())) {
+            if ("ALL".equals(selected) || Objects.equals(selected, a.getSeverity())) {
                 anomalyTableModel.addRow(new Object[]{
                         a.getSeverityIcon() + " " + a.getDroneId(),
                         a.getType(),
@@ -448,6 +464,21 @@ public class Dashboard extends JFrame {
 
         // Colour rows by severity
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            /**
+             * This renderer customizes anomaly table rows based on the severity
+             * of the anomaly record.
+             * <p>
+             * The method is invoked automatically by Swing whenever a cell must
+             * be drawn or refreshed.
+             *
+             * @param tbl the table requesting the renderer
+             * @param val the value stored in the cell
+             * @param selected true if the cell is currently selected
+             * @param focused true if the cell currently has focus
+             * @param row the row being rendered
+             * @param col the column being rendered
+             * @return the configured table cell to display
+             */
             @Override
             public Component getTableCellRendererComponent(JTable tbl, Object val,
                                                            boolean selected, boolean focused, int row, int col) {

@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * Encapsulates a single detected anomaly.
- *
+ * <p>
  * Stores the drone ID, anomaly type, a human-readable message,
  * severity level, and the timestamp when it was detected.
  * Can serialize itself to a CSV row for export.
@@ -20,6 +20,13 @@ public class AnomalyRecord {
     private final String severity;
     private final LocalDateTime timestamp;
 
+    /**
+     * Creates a new anomaly record using default severity handling.
+     *
+     * @param droneId identifier of the affected drone
+     * @param type anomaly category
+     * @param details descriptive anomaly message
+     */
     public AnomalyRecord(String droneId, String type, String details) {
         this.droneId   = droneId;
         this.type      = type;
@@ -28,6 +35,15 @@ public class AnomalyRecord {
         this.timestamp = LocalDateTime.now();
     }
 
+    /**
+     * Creates a fully specified anomaly record.
+     *
+     * @param droneId identifier of the affected drone
+     * @param type anomaly category
+     * @param details descriptive anomaly message
+     * @param severity anomaly severity level
+     * @param timestamp time the anomaly occurred
+     */
     public AnomalyRecord(String droneId, String type, String details,
                          String severity, LocalDateTime timestamp) {
         this.droneId   = droneId;
@@ -37,6 +53,11 @@ public class AnomalyRecord {
         this.timestamp = timestamp;
     }
 
+    /**
+     * Returns a visual icon representing the anomaly severity.
+     *
+     * @return a severity icon string
+     */
     public String getSeverityIcon() {
         return switch (severity) {
             case "CRITICAL" -> "⛔";
@@ -68,6 +89,8 @@ public class AnomalyRecord {
     /**
      * Serializes this record to a CSV row.
      * Column order: DroneID, Type, Severity, Details, Timestamp
+     *
+     * @return a CSV formatted row
      */
     public String toCSVRow() {
         return String.format("%s,%s,%s,\"%s\",%s",
@@ -79,6 +102,11 @@ public class AnomalyRecord {
         );
     }
 
+    /**
+     * Returns a string representation of this anomaly record.
+     *
+     * @return a formatted anomaly description
+     */
     @Override
     public String toString() {
         return String.format("[%s] %s | %s | %s: %s",

@@ -24,6 +24,16 @@ public class TelemetryGenerator {
     /** Chance (0–1) that an anomaly scenario fires for a drone this cycle. */
     private static final double ANOMALY_CHANCE = 0.04;
 
+    /**
+     * Generates and applies updated telemetry values
+     * for every drone in the fleet.
+     * <p>
+     * This method simulates movement, battery usage,
+     * altitude changes, velocity adjustments, and other
+     * operational characteristics.
+     *
+     * @param drones the drones to update
+     */
     public void updateDrones(List<Drone> drones) {
         for (Drone d : drones) {
             // -------------------------

@@ -10,7 +10,7 @@ import java.util.Map;
 
 /**
  * Detects anomalies in drone telemetry data.
- *
+ * <p>
  * Compares each drone's current state against its previous state
  * to catch sudden changes that a single-snapshot check would miss:
  * - GPS spoofing (unexpected location jump between cycles)
@@ -31,6 +31,17 @@ public class AnomalyDetector {
     private final Map<String, double[]> previousStates = new HashMap<>();
     private final Map<String, Integer> hoverCounter = new HashMap<>();
 
+    /**
+     * Analyzes drone telemetry and identifies anomalous behavior.
+     * <p>
+     * Current telemetry values are compared against previous
+     * observations and configured thresholds to detect conditions
+     * such as excessive movement, low battery, altitude issues,
+     * unusual velocity, or prolonged hovering.
+     *
+     * @param drones the fleet of drones to analyze
+     * @return a list of detected anomalies, empty if none are found
+     */
     public List<AnomalyRecord> detect(List<Drone> drones) {
         List<AnomalyRecord> anomalies = new ArrayList<>();
 

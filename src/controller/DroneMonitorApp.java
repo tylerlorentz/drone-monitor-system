@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * Entry point for the Drone Fleet Security Monitor.
- *
+ * <p>
  * Orchestrates:
  *  - Drone fleet initialisation
  *  - TelemetryGenerator for simulated data
@@ -19,7 +19,7 @@ import java.util.List;
  *  - AnomalyDatabase for SQLite persistence
  *  - AudioAlertManager for audio alerts
  *  - Dashboard (View) refresh on each cycle
- *
+ * <p>
  * The main loop runs every 2 seconds on a background thread;
  * all UI updates are dispatched to the EDT via invokeLater.
  */
@@ -35,21 +35,43 @@ public class DroneMonitorApp {
     private volatile boolean paused = false;
     private volatile boolean muted  = false;
 
+    /**
+     * Indicates whether telemetry processing is currently paused.
+     *
+     * @return true if processing is paused; otherwise false
+     */
     public boolean isPaused() { return paused; }
+
+    /**
+     * Indicates whether audio alerts are currently muted.
+     *
+     * @return true if audio alerts are muted; otherwise false
+     */
     public boolean isMuted()  { return muted;  }
+
+    /**
+     * Toggles the paused state of the application.
+     */
     public void togglePause() { paused = !paused; }
+
+    /**
+    * Toggles the audio mute state of the application.
+    */
     public void toggleMute()  { muted  = !muted;  }
 
-    // -------------------------
-    // ENTRY POINT
-    // -------------------------
+    /**
+     * Application entry point.
+     *
+     * @param args command-line arguments
+     */
     public static void main(String[] args) {
         new DroneMonitorApp().start();
     }
 
-    // -------------------------
-    // START METHOD
-    // -------------------------
+    /**
+     * Initializes application components and begins
+     * monitoring operations.
+     */
     public void start() {
 
         // -------------------------
@@ -95,6 +117,13 @@ public class DroneMonitorApp {
 
             int cycle = 0;
 
+            /**
+             * Executes the main monitoring loop.
+             * <p>
+             * This method continuously updates telemetry,
+             * performs anomaly detection, refreshes displays,
+             * and records anomalies until the application exits.
+             */
             @Override
             public void run() {
 

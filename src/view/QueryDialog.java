@@ -10,16 +10,17 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Modal dialog that lets operators search the SQLite anomaly database.
- *
+ * <p>
  * Query modes:
  *   1. All records
  *   2. By drone ID
  *   3. By anomaly type
  *   4. By date range
- *
+ * <p>
  * Results are shown in a scrollable table inside the dialog.
  */
 public class QueryDialog extends JDialog {
@@ -45,6 +46,12 @@ public class QueryDialog extends JDialog {
     private JLabel            param1Label;
     private JLabel            param2Label;
 
+    /**
+     * Creates a dialog for querying stored anomaly records.
+     *
+     * @param parent the parent window
+     * @param db database containing the anomalies
+     */
     public QueryDialog(Frame parent, AnomalyDatabase db) {
         super(parent, "Query Anomaly Database", true);
         this.db = db;
@@ -85,7 +92,7 @@ public class QueryDialog extends JDialog {
         // Initial state
         updateParamLabels("All Records");
         queryTypeBox.addActionListener(e ->
-                updateParamLabels((String) queryTypeBox.getSelectedItem()));
+                updateParamLabels((String) Objects.requireNonNull(queryTypeBox.getSelectedItem())));
 
         panel.add(styledLabel("Query:"));
         panel.add(queryTypeBox);
@@ -133,6 +140,7 @@ public class QueryDialog extends JDialog {
         List<AnomalyRecord> results;
 
         try {
+            assert mode != null;
             results = switch (mode) {
                 case "By Drone ID"    -> db.queryByDroneId(param1Field.getText().trim());
                 case "By Type"        -> db.queryByType(param1Field.getText().trim());
